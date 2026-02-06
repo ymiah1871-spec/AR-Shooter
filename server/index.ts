@@ -1,8 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite } from "./vite";
 import { createServer } from "http";
-import { Server } from "socket.io"; // মাল্টিপ্লেয়ারের জন্য
+import { Server } from "socket.io";
 
 const app = express();
 app.use(express.json());
@@ -15,7 +15,7 @@ const io = new Server(httpServer, {
 
 // মাল্টিপ্লেয়ার লজিক
 io.on("connection", (socket) => {
-  log(`একজন বন্ধু জয়েন করেছে: ${socket.id}`);
+  console.log(`একজন বন্ধু জয়েন করেছে: ${socket.id}`);
   
   socket.on("monsterHit", (data) => {
     // একজনের হিট সবার কাছে পাঠিয়ে দেওয়া
@@ -23,19 +23,19 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    log("একজন বন্ধু ডিসকানেক্ট হয়েছে");
+    console.log("একজন বন্ধু ডিসকানেক্ট হয়েছে");
   });
 });
 
 (async () => {
-  const server = registerRoutes(app);
+  await registerRoutes(httpServer, app);
+
   if (app.get("env") === "development") {
-    await setupVite(app, httpServer);
-  } else {
-    serveStatic(app);
+    await setupVite(httpServer, app);
   }
+
   const PORT = 5000;
   httpServer.listen(PORT, "0.0.0.0", () => {
-    log(`গেমটি পোর্ট ${PORT} এ চলছে`);
+    console.log(`গেমটি পোর্ট ${PORT} এ চলছে`);
   });
 })();
