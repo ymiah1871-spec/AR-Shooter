@@ -30,18 +30,21 @@
     </style>
   </head>
   <body>
-    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
-      <a-marker-camera preset='hiro'>
-        <a-box id="monster" position="0 0.5 0" rotation="0 45 0" color="#EF2D5E" scale="0.5 0.5 0.5"></a-box>
-      </a-marker-camera>
-    </a-scene>
-
-    <div id="fireButton">FIRE</div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <div id="ar-game-container" style="display: none;">
+      <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false;'>
+        <a-marker-camera preset='hiro'>
+          <a-box id="monster-marker" position="0 0.5 0" rotation="0 45 0" color="#EF2D5E" scale="0.5 0.5 0.5"></a-box>
+        </a-marker-camera>
+      </a-scene>
+      <div id="fireButton-marker">FIRE</div>
+    </div>
 
     <script>
       window.addEventListener('load', () => {
-        const fireButton = document.getElementById('fireButton');
-        const monster = document.getElementById('monster');
+        const fireButton = document.getElementById('fireButton-marker');
+        const monster = document.getElementById('monster-marker');
 
         if (fireButton && monster) {
           fireButton.addEventListener('click', function() {

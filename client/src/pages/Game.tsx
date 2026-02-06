@@ -52,7 +52,7 @@ export default function Game() {
     if (monster) {
       // Simple "hit" logic - in a real game we'd check raycaster intersection
       // But for this simple demo, firing "hits" if the monster is visible
-      const isVisible = monster.getAttribute("visible") !== false;
+      const isVisible = monster.getAttribute("visible") !== "false";
       
       if (isVisible) {
         monster.setAttribute("visible", "false");
