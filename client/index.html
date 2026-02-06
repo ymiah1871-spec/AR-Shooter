@@ -1,62 +1,103 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Basic AR Shooter</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Hunter Multiplayer</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; background-color: #000; }
-      #fireButton {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 80px;
-        height: 80px;
-        background-color: red;
-        color: white;
-        border-radius: 50%;
-        border: 2px solid white;
-        font-size: 24px;
-        font-weight: bold;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        z-index: 999;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        /* বাম পাশের কন্ট্রোল (স্কোর এবং মাইক) */
+        .left-controls {
+            position: fixed; left: 30px; bottom: 30px;
+            display: flex; flex-direction: column; gap: 20px; z-index: 10000;
+        }
+        
+        /* ডান পাশের কন্ট্রোল (ফায়ার বাটন) */
+        .right-controls {
+            position: fixed; right: 40px; bottom: 40px; z-index: 10000;
+        }
+
+        .btn-ui {
+            background: rgba(0,0,0,0.7); color: #00fff2; padding: 15px;
+            border-radius: 15px; border: 2px solid #00fff2; font-weight: bold;
+        }
+
+        .fire-btn {
+            width: 120px; height: 120px; background: radial-gradient(circle, #ff0000, #660000);
+            border: 6px solid white; border-radius: 50%; color: white;
+            font-size: 22px; font-weight: bold; box-shadow: 0 0 20px rgba(255,0,0,0.8);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+
+        /* বন্ধুদের ইনভাইট বাটন */
+        .invite-panel {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #25D366; color: white; padding: 10px 20px;
+            border-radius: 30px; font-weight: bold; cursor: pointer; z-index: 10000;
+        }
     </style>
-  </head>
-  <body>
-    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false;'>
-      <a-marker preset='hiro'>
-        <a-box id="monster" position="0 0.5 0" rotation="0 45 0" color="#EF2D5E" scale="0.5 0.5 0.5"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
+</head>
+<body>
+
+    <div class="invite-panel" onclick="copyGameLink()">🔗 INVITE TEAM (Copy Link)</div>
+
+    <div class="left-controls">
+        <div class="btn-ui">TEAM SCORE: <span id="sc">0</span></div>
+        <button class="btn-ui" id="mBtn" style="color: white; cursor: pointer;">🎤 MIC OFF</button>
+    </div>
+
+    <div class="right-controls">
+        <button class="fire-btn" id="fBtn">FIRE</button>
+    </div>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+        <a-entity id="rig"><a-camera look-controls position="0 1.6 0"></a-camera></a-entity>
+        <a-entity id="monster-target" position="0 1.5 -5">
+            <a-box id="monster" color="#D81B60" scale="2 2 2" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
+                <a-sphere position="0.3 0.4 0.5" radius="0.15" color="white"></a-sphere>
+                <a-sphere position="-0.3 0.4 0.5" radius="0.15" color="white"></a-sphere>
+            </a-box>
+        </a-entity>
     </a-scene>
 
-    <div id="fireButton">FIRE</div>
-
     <script>
-      window.addEventListener('load', () => {
-        const fireButton = document.getElementById('fireButton');
-        const monster = document.getElementById('monster');
-
-        if (fireButton && monster) {
-          fireButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            monster.setAttribute('visible', false);
-            alert('Monster Shot Down!');
-
-            setTimeout(() => {
-              monster.setAttribute('visible', true);
-            }, 5000);
-          });
+        let score = 0;
+        let mic = false;
+        
+        // লিঙ্ক কপি করার ফাংশন
+        function copyGameLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("গেমের লিঙ্ক কপি হয়েছে! বন্ধুদের পাঠিয়ে দিন।");
         }
-      });
+
+        // বাটন কন্ট্রোল
+        document.getElementById('mBtn').onclick = function() {
+            mic = !mic;
+            this.innerText = mic ? "🎤 MIC ON" : "🎤 MIC OFF";
+            this.style.background = mic ? "#00ff00" : "rgba(0,0,0,0.7)";
+            if(mic) navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
+        };
+
+        document.getElementById('fBtn').onclick = function() {
+            const m = document.getElementById('monster');
+            if (m.getAttribute('visible')) {
+                m.setAttribute('visible', false);
+                score += 10;
+                document.getElementById('sc').innerText = score;
+                new Audio('https://www.soundjay.com/mechanical/gun-gunshot-01.mp3').play().catch(() => {});
+                
+                setTimeout(() => {
+                    const x = (Math.random() * 10) - 5;
+                    const z = (Math.random() * -8) - 4;
+                    m.parentElement.setAttribute('position', `${x} 1.5 ${z}`);
+                    m.setAttribute('visible', true);
+                }, 1500);
+            }
+        };
     </script>
-  </body>
+</body>
 </html>
+
