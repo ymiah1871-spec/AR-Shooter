@@ -3,101 +3,68 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Hunter Multiplayer</title>
+    <title>AR Hunter Pro</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        
-        /* বাম পাশের কন্ট্রোল (স্কোর এবং মাইক) */
-        .left-controls {
-            position: fixed; left: 30px; bottom: 30px;
-            display: flex; flex-direction: column; gap: 20px; z-index: 10000;
-        }
-        
-        /* ডান পাশের কন্ট্রোল (ফায়ার বাটন) */
-        .right-controls {
-            position: fixed; right: 40px; bottom: 40px; z-index: 10000;
-        }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
-        .btn-ui {
-            background: rgba(0,0,0,0.7); color: #00fff2; padding: 15px;
-            border-radius: 15px; border: 2px solid #00fff2; font-weight: bold;
-        }
+        /* ম্যাপ এবং বাটন */
+        #map { position: fixed; top: 15px; left: 15px; width: 90px; height: 90px; border: 2px solid #0f0; border-radius: 50%; background: rgba(0,0,0,0.5); z-index: 100; }
+        .enemy-dot { position: absolute; width: 8px; height: 8px; background: red; border-radius: 50%; top: 50%; left: 50%; }
 
-        .fire-btn {
-            width: 120px; height: 120px; background: radial-gradient(circle, #ff0000, #660000);
-            border: 6px solid white; border-radius: 50%; color: white;
-            font-size: 22px; font-weight: bold; box-shadow: 0 0 20px rgba(255,0,0,0.8);
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
-        }
+        #run-btn { position: fixed; left: 30px; bottom: 120px; width: 80px; height: 80px; background: rgba(255,255,255,0.4); border: 3px solid #fff; border-radius: 50%; z-index: 100; color: white; font-weight: bold; }
 
-        /* বন্ধুদের ইনভাইট বাটন */
-        .invite-panel {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #25D366; color: white; padding: 10px 20px;
-            border-radius: 30px; font-weight: bold; cursor: pointer; z-index: 10000;
-        }
+        #fire-btn { position: fixed; right: 30px; bottom: 40px; width: 130px; height: 130px; background: radial-gradient(circle, #f00, #600); border: 6px solid #fff; border-radius: 50%; z-index: 100; box-shadow: 0 0 20px red; }
     </style>
 </head>
 <body>
 
-    <div class="invite-panel" onclick="copyGameLink()">🔗 INVITE TEAM (Copy Link)</div>
-
-    <div class="left-controls">
-        <div class="btn-ui">TEAM SCORE: <span id="sc">0</span></div>
-        <button class="btn-ui" id="mBtn" style="color: white; cursor: pointer;">🎤 MIC OFF</button>
-    </div>
-
-    <div class="right-controls">
-        <button class="fire-btn" id="fBtn">FIRE</button>
-    </div>
+    <div id="map"><div class="enemy-dot" id="dot"></div></div>
+    <button id="run-btn">RUN</button>
+    <button id="fire-btn"></button>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-        <a-entity id="rig"><a-camera look-controls position="0 1.6 0"></a-camera></a-entity>
-        <a-entity id="monster-target" position="0 1.5 -5">
-            <a-box id="monster" color="#D81B60" scale="2 2 2" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-                <a-sphere position="0.3 0.4 0.5" radius="0.15" color="white"></a-sphere>
-                <a-sphere position="-0.3 0.4 0.5" radius="0.15" color="white"></a-sphere>
-            </a-box>
+
+        <a-entity id="rig" position="0 2 4">
+            <a-camera look-controls></a-camera>
+
+            <a-entity id="myPlayer" position="0 -1.5 -2.5">
+                <a-cylinder color="#222" height="1.5" radius="0.3"></a-cylinder> <a-box color="#3b5998" width="0.7" height="0.8" depth="0.4" position="0 0.5 0"></a-box> <a-sphere color="#ffe0bd" radius="0.25" position="0 1.1 0"></a-sphere> <a-box color="black" width="0.1" height="0.1" depth="0.7" position="0.4 0.5 0.4"></a-box> </a-entity>
         </a-entity>
+
+        <a-entity id="monster-box" position="0 1.5 -10">
+            <a-box color="darkred" scale="3 3 3"></a-box>
+        </a-entity>
+
     </a-scene>
 
     <script>
-        let score = 0;
-        let mic = false;
-        
-        // লিঙ্ক কপি করার ফাংশন
-        function copyGameLink() {
-            navigator.clipboard.writeText(window.location.href);
-            alert("গেমের লিঙ্ক কপি হয়েছে! বন্ধুদের পাঠিয়ে দিন।");
-        }
+        const socket = io();
+        const rig = document.getElementById('rig');
+        let running = false;
 
-        // বাটন কন্ট্রোল
-        document.getElementById('mBtn').onclick = function() {
-            mic = !mic;
-            this.innerText = mic ? "🎤 MIC ON" : "🎤 MIC OFF";
-            this.style.background = mic ? "#00ff00" : "rgba(0,0,0,0.7)";
-            if(mic) navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
-        };
+        // Run Button Logic
+        const runBtn = document.getElementById('run-btn');
+        runBtn.addEventListener('touchstart', () => { running = true; });
+        runBtn.addEventListener('touchend', () => { running = false; });
 
-        document.getElementById('fBtn').onclick = function() {
-            const m = document.getElementById('monster');
-            if (m.getAttribute('visible')) {
-                m.setAttribute('visible', false);
-                score += 10;
-                document.getElementById('sc').innerText = score;
-                new Audio('https://www.soundjay.com/mechanical/gun-gunshot-01.mp3').play().catch(() => {});
-                
-                setTimeout(() => {
-                    const x = (Math.random() * 10) - 5;
-                    const z = (Math.random() * -8) - 4;
-                    m.parentElement.setAttribute('position', `${x} 1.5 ${z}`);
-                    m.setAttribute('visible', true);
-                }, 1500);
+        setInterval(() => {
+            if(running) {
+                let pos = rig.getAttribute('position');
+                pos.z -= 0.12; // সামনে দৌড়াবে
+                rig.setAttribute('position', pos);
+                socket.emit('move', { x: pos.x, z: pos.z });
             }
-        };
+
+            // Map Update
+            let mPos = document.getElementById('monster-box').getAttribute('position');
+            let rPos = rig.getAttribute('position');
+            let dx = (mPos.x - rPos.x) * 4;
+            let dz = (mPos.z - rPos.z) * 4;
+            document.getElementById('dot').style.transform = `translate(${dx}px, ${dz}px)`;
+        }, 50);
     </script>
 </body>
 </html>
-
