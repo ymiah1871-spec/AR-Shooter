@@ -3,67 +3,64 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Hunter Pro</title>
+    <title>AR Hunter - Original Pro</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-        /* ম্যাপ এবং বাটন */
-        #map { position: fixed; top: 15px; left: 15px; width: 90px; height: 90px; border: 2px solid #0f0; border-radius: 50%; background: rgba(0,0,0,0.5); z-index: 100; }
-        .enemy-dot { position: absolute; width: 8px; height: 8px; background: red; border-radius: 50%; top: 50%; left: 50%; }
-
-        #run-btn { position: fixed; left: 30px; bottom: 120px; width: 80px; height: 80px; background: rgba(255,255,255,0.4); border: 3px solid #fff; border-radius: 50%; z-index: 100; color: white; font-weight: bold; }
-
-        #fire-btn { position: fixed; right: 30px; bottom: 40px; width: 130px; height: 130px; background: radial-gradient(circle, #f00, #600); border: 6px solid #fff; border-radius: 50%; z-index: 100; box-shadow: 0 0 20px red; }
+        body { margin: 0; overflow: hidden; }
+        /* প্রফেশনাল রান বাটন */
+        #run-btn { 
+            position: fixed; left: 40px; bottom: 120px; width: 80px; height: 80px; 
+            background: rgba(255,255,255,0.3) url('https://img.icons8.com/ios-filled/50/ffffff/running.png') no-repeat center;
+            background-size: 50%; border: 3px solid white; border-radius: 50%; z-index: 100;
+        }
+        /* ফায়ার বাটন */
+        #fire-btn { 
+            position: fixed; right: 40px; bottom: 40px; width: 120px; height: 120px; 
+            background: radial-gradient(circle, #ff4444, #990000); 
+            border: 5px solid rgba(255,255,255,0.8); border-radius: 50%; z-index: 100;
+        }
     </style>
 </head>
 <body>
-
-    <div id="map"><div class="enemy-dot" id="dot"></div></div>
-    <button id="run-btn">RUN</button>
-    <button id="fire-btn"></button>
+    <div id="run-btn"></div>
+    <div id="fire-btn"></div>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-
-        <a-entity id="rig" position="0 2 4">
-            <a-camera look-controls></a-camera>
-
-            <a-entity id="myPlayer" position="0 -1.5 -2.5">
-                <a-cylinder color="#222" height="1.5" radius="0.3"></a-cylinder> <a-box color="#3b5998" width="0.7" height="0.8" depth="0.4" position="0 0.5 0"></a-box> <a-sphere color="#ffe0bd" radius="0.25" position="0 1.1 0"></a-sphere> <a-box color="black" width="0.1" height="0.1" depth="0.7" position="0.4 0.5 0.4"></a-box> </a-entity>
+        <a-entity id="rig" position="0 2 12"> 
+            <a-camera look-controls wasd-controls-enabled="false"></a-camera>
+            
+            <a-entity id="player" position="0 -1.6 -4.5" scale="1 1 1">
+                <a-cylinder id="leg" color="#111" height="1.6" radius="0.25"></a-cylinder> <a-box color="#3b5998" width="0.75" height="1" depth="0.4" position="0 0.7 0"></a-box> <a-sphere color="#ffe0bd" radius="0.3" position="0 1.5 0"></a-sphere> </a-entity>
         </a-entity>
-
-        <a-entity id="monster-box" position="0 1.5 -10">
-            <a-box color="darkred" scale="3 3 3"></a-box>
-        </a-entity>
-
+        <a-box id="monster" position="0 1.5 -15" color="red" scale="3 3 3"></a-box>
     </a-scene>
 
     <script>
         const socket = io();
-        const rig = document.getElementById('rig');
         let running = false;
+        const rig = document.getElementById('rig');
+        const player = document.getElementById('player');
 
-        // Run Button Logic
-        const runBtn = document.getElementById('run-btn');
-        runBtn.addEventListener('touchstart', () => { running = true; });
-        runBtn.addEventListener('touchend', () => { running = false; });
+        document.getElementById('run-btn').ontouchstart = () => running = true;
+        document.getElementById('run-btn').ontouchend = () => {
+            running = false;
+            player.setAttribute('rotation', '0 0 0'); // থামালে সোজা হবে
+        };
 
         setInterval(() => {
             if(running) {
                 let pos = rig.getAttribute('position');
-                pos.z -= 0.12; // সামনে দৌড়াবে
+                pos.z -= 0.2; // সামনের দিকে দৌড়ানো
                 rig.setAttribute('position', pos);
-                socket.emit('move', { x: pos.x, z: pos.z });
+                
+                // দৌড়ানোর সময় ক্যারেক্টারটি ডানে-বামে একটু দুলবে (অরিজিনাল লুক)
+                let wobble = Math.sin(Date.now() * 0.01) * 8;
+                player.setAttribute('rotation', `0 0 ${wobble}`);
+                
+                socket.emit('move', pos);
             }
-
-            // Map Update
-            let mPos = document.getElementById('monster-box').getAttribute('position');
-            let rPos = rig.getAttribute('position');
-            let dx = (mPos.x - rPos.x) * 4;
-            let dz = (mPos.z - rPos.z) * 4;
-            document.getElementById('dot').style.transform = `translate(${dx}px, ${dz}px)`;
         }, 50);
     </script>
 </body>
