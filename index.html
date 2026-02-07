@@ -3,119 +3,142 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF AR - Professional Edition</title>
+    <title>FF AR - Ultimate Edition</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
-        .game-ui {
-            position: fixed;
-            z-index: 100;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            user-select: none;
-        }
-        .btn {
-            position: absolute;
-            pointer-events: auto;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255,255,255,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-        }
-        .fire-btn {
-            right: 10%; bottom: 15%; width: 85px; height: 85px;
-            background: url('https://img.icons8.com/ios-filled/100/ffffff/target.png') no-repeat center;
-            background-size: 60%;
-            background-color: rgba(255, 0, 0, 0.4);
-        }
-        .jump-btn { right: 12%; bottom: 40%; width: 50px; height: 50px; }
-        .joystick { left: 10%; bottom: 15%; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; }
         
-        #lobby {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://wallpaperaccess.com/full/1155013.jpg') no-repeat center center;
-            background-size: cover;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        /* লবি এবং মেনু */
+        #main-lobby {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('https://images.wallpapersden.com/image/download/garena-free-fire-2021_bWlpZ2mUmZqaraWkpJRmbmdlrWlnZ2U.jpg');
+            background-size: cover; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .start-btn {
-            padding: 15px 50px;
-            background: #ffcc00;
-            border: none;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 20px;
-            box-shadow: 0 0 20px #ffcc00;
+
+        .btn {
+            padding: 15px 40px; margin: 10px; border: none; border-radius: 5px;
+            font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .start-btn { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+        .invite-btn { background: #007bff; color: white; }
+
+        /* গেম ইউআই */
+        #game-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 100; }
+        
+        .control-btn {
+            position: absolute; pointer-events: auto; width: 70px; height: 70px;
+            border-radius: 50%; border: 3px solid white; color: white;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .fire-btn { right: 10%; bottom: 15%; background: rgba(255,0,0,0.6); display: none; }
+        .mic-btn { left: 10%; top: 10%; background: rgba(0,0,0,0.5); }
+        .active-mic { background: #00ff00; box-shadow: 0 0 15px #00ff00; }
+        .alok-btn { left: 50%; bottom: 15%; transform: translateX(-50%); background: rgba(0,200,255,0.7); }
+
+        #loot-alert {
+            position: fixed; top: 20%; width: 100%; text-align: center;
+            color: gold; font-size: 22px; font-weight: bold; display: none;
         }
     </style>
 </head>
 
-<body style="margin: 0; overflow: hidden;">
+<body>
 
-    <div id="lobby">
-        <h1 style="color: white; text-shadow: 2px 2px 10px red;">FREE FIRE AR PRO</h1>
-        <div style="color: #00ff00; margin-bottom: 20px;">Lobby: 1/4 Friends Joined</div>
-        <button class="start-btn" onclick="startGame()">START MATCH</button>
+    <div id="main-lobby">
+        <h1 style="color: gold; text-shadow: 0 0 10px black; font-size: 40px;">SQUAD LOBBY</h1>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <p style="color: white;">Team: <span id="player-count">1/4</span> Online</p>
+            <div style="display: flex; gap: 10px;">
+                <div style="width: 50px; height: 50px; background: gold; border-radius: 5px; display: flex; align-items: center; justify-content: center;">👤</div>
+                <div style="width: 50px; height: 50px; border: 2px dashed white; border-radius: 5px;"></div>
+                <div style="width: 50px; height: 50px; border: 2px dashed white; border-radius: 5px;"></div>
+            </div>
+        </div>
+        <button class="btn invite-btn" onclick="inviteFriends()">INVITE FRIENDS</button>
+        <button class="btn start-btn" onclick="startGame()">START MATCH</button>
     </div>
 
-    <div class="game-ui" id="ui" style="display: none;">
-        <div class="btn fire-btn" onclick="playFire()"></div>
-        <div class="btn jump-btn" onclick="jump()">JUMP</div>
-        <div class="joystick"></div>
-        <div style="position: absolute; top: 20px; right: 20px; color: white;">HP: 200/200</div>
+    <div id="game-ui">
+        <div id="loot-alert">GO NEAR THE GUN TO PICK UP!</div>
+        <div class="control-btn mic-btn" id="mic-toggle" onclick="toggleVoice()">🎤</div>
+        <div class="control-btn fire-btn" id="f-btn" onclick="fire()">🔥</div>
+        <div class="control-btn alok-btn" onclick="alokAbility()">DJ</div>
+        <div style="position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;">
+            HP: <span id="hp">200</span>
+        </div>
     </div>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-        
         <a-assets>
-            <a-asset-item id="gunModel" src="https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/m16/model.gltf"></a-asset-item>
+            <a-asset-item id="alok" src="https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/ready-player-me/model.gltf"></a-asset-item>
+            <a-asset-item id="m16" src="https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/m16/model.gltf"></a-asset-item>
         </a-assets>
 
         <a-entity camera>
-            <a-entity id="weapon" gltf-model="#gunModel" position="0.2 -0.3 -0.5" rotation="0 180 0" scale="0.1 0.1 0.1">
-            </a-entity>
-            <a-cursor color="white" scale="0.5 0.5 0.5"></a-cursor>
+            <a-entity id="my-gun" gltf-model="#m16" position="0.3 -0.4 -0.6" rotation="0 180 0" scale="0.12 0.12 0.12" visible="false"></a-entity>
+            <a-ring id="h-ring" color="cyan" rotation="-90 0 0" radius-inner="1.2" radius-outer="1.4" position="0 -1.5 0" visible="false"></a-ring>
+            <a-cursor color="yellow"></a-cursor>
         </a-entity>
 
-        <a-entity id="enemy" position="0 0 -5" animation="property: position; to: 0 0.5 -5; dir: alternate; dur: 1000; loop: true">
-            <a-box color="#111" width="1" height="2" depth="1"></a-box>
-            <a-sphere color="red" position="0 1.2 0.3" radius="0.2"></a-sphere>
-            <a-text value="BOSS MONSTER" color="red" align="center" position="0 1.8 0"></a-text>
+        <a-entity id="loot-gun" gltf-model="#m16" position="1 -1 -4" rotation="0 45 0" scale="0.1 0.1 0.1" onclick="pickup()">
+            <a-text value="PICK UP M16" align="center" position="0 1.5 0" color="gold" scale="2 2 2"></a-text>
         </a-entity>
 
+        <a-entity id="lobby-char" gltf-model="#alok" position="0 -1 -3" scale="1.5 1.5 1.5"></a-entity>
     </a-scene>
 
     <script>
+        let health = 200;
+        let isArmed = false;
+        let micOn = false;
+
+        function inviteFriends() {
+            const url = window.location.href;
+            alert("বন্ধুদের ডাকার জন্য এই লিঙ্কটি পাঠান:\n" + url);
+        }
+
         function startGame() {
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('ui').style.display = 'block';
+            document.getElementById('main-lobby').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            document.getElementById('loot-alert').style.display = 'block';
+            setTimeout(() => { document.getElementById('loot-alert').style.display = 'none'; }, 4000);
         }
 
-        function playFire() {
-            // গান রিকয়েল এনিমেশন
-            let weapon = document.querySelector('#weapon');
-            weapon.setAttribute('position', '0.2 -0.3 -0.45');
-            setTimeout(() => weapon.setAttribute('position', '0.2 -0.3 -0.5'), 50);
-            
-            // এনিমিকে হিট করার এফেক্ট
-            let enemy = document.querySelector('#enemy');
-            enemy.setAttribute('material', 'color', 'white');
-            setTimeout(() => enemy.setAttribute('material', 'color', '#111'), 100);
+        async function toggleVoice() {
+            const btn = document.getElementById('mic-toggle');
+            if (!micOn) {
+                try {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micOn = true;
+                    btn.classList.add('active-mic');
+                } catch(e) { alert("Mic permission denied!"); }
+            } else {
+                micOn = false;
+                btn.classList.remove('active-mic');
+            }
         }
 
-        function jump() {
-            let cam = document.querySelector('a-entity[camera]');
-            cam.setAttribute('position', '0 1 0');
-            setTimeout(() => cam.setAttribute('position', '0 0 0'), 300);
+        function pickup() {
+            isArmed = true;
+            document.getElementById('loot-gun').setAttribute('visible', 'false');
+            document.getElementById('my-gun').setAttribute('visible', 'true');
+            document.getElementById('f-btn').style.display = 'flex';
+            alert("M16 Equipped!");
+        }
+
+        function alokAbility() {
+            const ring = document.getElementById('h-ring');
+            ring.setAttribute('visible', 'true');
+            let timer = setInterval(() => {
+                if(health < 200) { health += 2; document.getElementById('hp').innerText = health; }
+            }, 1000);
+            setTimeout(() => { ring.setAttribute('visible', 'false'); clearInterval(timer); }, 6000);
+        }
+
+        function fire() {
+            const g = document.getElementById('my-gun');
+            g.setAttribute('animation', 'property: position; to: 0.3 -0.4 -0.55; dur: 50; dir: alternate; loop: 1');
         }
     </script>
 </body>
