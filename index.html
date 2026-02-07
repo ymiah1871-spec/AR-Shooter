@@ -9,63 +9,77 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; }
-        .ui {
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        .ui-panel {
             position: absolute; width: 100%; height: 100%;
             pointer-events: none; z-index: 10;
         }
-        .top-bar {
+        .header {
             display: flex; justify-content: space-between; padding: 20px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
         }
-        .hp { color: white; background: red; padding: 5px 15px; border-radius: 5px; font-weight: bold; }
-        .footer {
-            position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; gap: 20px; pointer-events: auto;
+        .hp-box { color: white; background: #ce1126; padding: 5px 20px; border-radius: 5px; font-weight: bold; border: 2px solid #fff; }
+        .footer-btns {
+            position: absolute; bottom: 50px; width: 100%;
+            display: flex; justify-content: center; gap: 40px; pointer-events: auto;
         }
         .btn {
-            width: 80px; height: 80px; border-radius: 50%; border: 2px solid #fff;
-            color: white; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #000;
+            width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff;
+            color: white; font-weight: bold; cursor: pointer; font-size: 14px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8); transition: 0.3s;
         }
+        .btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-    <div class="ui">
-        <div class="top-bar">
-            <h2 style="color: yellow; margin: 0;">FF AR - ULTIMATE</h2>
-            <div class="hp">HP: 200</div>
+    <div class="ui-panel">
+        <div class="header">
+            <h2 style="color: #ffcc00; margin: 0; font-style: italic; text-shadow: 2px 2px #000;">FF AR ULTIMATE</h2>
+            <div class="hp-box">HP: 200</div>
         </div>
-        <div class="footer">
-            <button class="btn" style="background: #27ae60;" onclick="invite()">INVITE</button>
-            <button class="btn" style="background: #2980b9;">DJ ALOK</button>
+        <div class="footer-btns">
+            <button class="btn" style="background: #157347;" onclick="inviteFriends()">INVITE</button>
+            <button class="btn" style="background: #0d6efd;">DJ ALOK</button>
         </div>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="antialias: true; colorManagement: true;">
         
-        <a-entity light="type: ambient; intensity: 1.5;"></a-entity>
-        <a-entity light="type: directional; intensity: 1; position: 1 1 1;"></a-entity>
+        <a-entity light="type: ambient; intensity: 2;"></a-entity>
+        <a-entity light="type: directional; intensity: 1.5; position: 1 1 1;"></a-entity>
 
-        <a-entity position="0 -1.5 -4" scale="1.5 1.5 1.5"
-                  gltf-model="url(https://raw.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
-                  animation-mixer>
-            <a-text value="YOU (ALOK)" align="center" position="0 2.5 0" color="yellow"></a-text>
+        <a-entity id="player" 
+                  position="0 -1.5 -3.5" 
+                  scale="1.8 1.8 1.8"
+                  gltf-model="url(https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
+                  animation-mixer="clip: *">
+            <a-text value="YOU" align="center" position="0 2.3 0" color="#ffcc00" scale="1.5 1.5 1.5"></a-text>
         </a-entity>
 
-        <a-entity position="-2 -1.5 -5" scale="1.2 1.2 1.2"
-                  gltf-model="url(https://raw.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
+        <a-entity position="-2.5 -1.5 -5" scale="1.5 1.5 1.5"
+                  gltf-model="url(https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
                   material="opacity: 0.5; transparent: true;">
-            <a-text value="FRIEND 1" align="center" position="0 2.5 0" color="white"></a-text>
+            <a-text value="FRIEND 1" align="center" position="0 2.3 0" color="#fff"></a-text>
+        </a-entity>
+
+        <a-entity position="2.5 -1.5 -5" scale="1.5 1.5 1.5"
+                  gltf-model="url(https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
+                  material="opacity: 0.5; transparent: true;">
+            <a-text value="FRIEND 2" align="center" position="0 2.3 0" color="#fff"></a-text>
         </a-entity>
 
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-        function invite() {
-            let url = window.location.href;
-            navigator.share ? navigator.share({title: 'Join FF AR', url: url}) : alert("Link: " + url);
+        function inviteFriends() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: 'Join FF AR Lobby', url: url });
+            } else {
+                alert("লিঙ্কটি কপি করে বন্ধুদের দিন: " + url);
+            }
         }
     </script>
 </body>
