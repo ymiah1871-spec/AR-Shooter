@@ -1,39 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AR Shooter Pro</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <meta charset="utf-8">
+    <title>AR Shooter Pro - Free Fire Style</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
-        .buttons {
+        .ui-container {
             position: fixed;
             bottom: 20px;
-            left: 20px;
             width: 100%;
             display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
             z-index: 10;
         }
-        #runButton {
+        .fire-btn {
             width: 80px;
             height: 80px;
+            background: rgba(255, 0, 0, 0.7);
+            border-radius: 50%;
+            border: 4px solid white;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .run-btn {
+            width: 70px;
+            height: 70px;
             background: rgba(0, 255, 0, 0.7);
             border-radius: 50%;
             border: 3px solid white;
             color: white;
-            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
+
 <body style="margin: 0; overflow: hidden;">
-    <div class="buttons">
-        <button id="runButton">RUN</button>
+    <div class="ui-container">
+        <div class="run-btn">RUN</div>
+        <div class="fire-btn" onclick="fireGun()">FIRE</div>
     </div>
-    <a-scene embedded arjs>
-        <a-entity id="player" position="0 0 -12">
-            <a-box color="blue" width="1" height="2" depth="0.5"></a-box>
-            <a-sphere position="0 1.5 0" radius="0.5" color="peachpuff"></a-sphere>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+        <a-entity camera>
+            <a-entity id="gun" position="0.3 -0.4 -0.5" rotation="0 180 0" scale="0.05 0.05 0.05">
+                <a-box color="gray" width="2" height="1" depth="5"></a-box> </a-entity>
+            <a-cursor color="red"></a-cursor>
         </a-entity>
-        <a-marker-camera preset="hiro"></a-marker-camera>
+
+        <a-entity id="monster" position="0 0 -5" scale="1 1 1">
+            <a-sphere color="red" radius="0.5"></a-sphere> <a-text value="ENEMY" align="center" position="0 1 0"></a-text>
+        </a-entity>
     </a-scene>
+
+    <script>
+        function fireGun() {
+            // গুলি করার এনিমেশন
+            let gun = document.querySelector('#gun');
+            gun.setAttribute('position', '0.3 -0.4 -0.45');
+            setTimeout(() => {
+                gun.setAttribute('position', '0.3 -0.4 -0.5');
+            }, 50);
+            
+            // এনিমিকে গুলি লাগলে কী হবে
+            console.log("Fired!");
+        }
+    </script>
 </body>
 </html>
