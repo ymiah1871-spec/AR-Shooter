@@ -2,71 +2,118 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF AR - Ultimate Lobby Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FF AR - Battle Royale Edition</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        /* জুম এবং ক্যামেরা ভিউ ঠিক করার জন্য */
-        #arjs-video { width: 100vw !important; height: 100vh !important; object-fit: cover !important; }
-        
-        .ui-panel {
+        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        .game-ui {
             position: absolute; width: 100%; height: 100%;
             pointer-events: none; z-index: 100;
         }
-        .header { display: flex; justify-content: space-between; padding: 20px; background: rgba(0,0,0,0.6); }
-        .footer {
+        .top-info { display: flex; justify-content: space-between; padding: 15px; background: rgba(0,0,0,0.6); color: #0f0; }
+        .controls {
             position: absolute; bottom: 30px; width: 100%;
             display: flex; justify-content: center; gap: 20px; pointer-events: auto;
         }
         .btn {
-            padding: 15px 25px; border-radius: 30px; border: 2px solid #fff;
-            color: white; font-weight: bold; background: #2980b9; cursor: pointer;
+            background: #ffcc00; border: 2px solid #000; padding: 15px;
+            font-weight: bold; border-radius: 5px; cursor: pointer;
         }
+        .eject-btn { background: #ff4444; color: white; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="ui-panel">
-        <div class="header">
-            <h2 style="color: #ffcc00; margin: 0;">FF AR LOBBY</h2>
-            <div style="background: red; color: white; padding: 5px 15px; border-radius: 5px;">HP: 200</div>
+    <div class="game-ui">
+        <div class="top-info">
+            <div>MAP: INDIA (TAJ & QUTUB)</div>
+            <div style="color: #ff0000;">HP: 200/200</div>
         </div>
-        <div class="footer">
-            <button class="btn" style="background: #27ae60;" onclick="invite()">INVITE FRIENDS</button>
-            <button class="btn">SELECT CHARACTER</button>
+        
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="startPlane()">START MATCH</button>
+            <button class="btn eject-btn" id="ejectBtn" onclick="eject()">EJECT (JUMP)</button>
+            <button class="btn" onclick="invite()">INVITE FRIENDS</button>
         </div>
     </div>
 
-    <a-scene embedded 
-             arjs="sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;"
-             vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         
-        <a-entity light="type: ambient; intensity: 2;"></a-entity>
-        <a-entity light="type: directional; intensity: 1; position: 1 1 1;"></a-entity>
+        <a-assets>
+            <a-asset-item id="playerModel" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf"></a-asset-item>
+            <a-asset-item id="monster" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF/BrainStem.gltf"></a-asset-item>
+        </a-assets>
 
-        <a-entity id="mainCharacter"
-                  position="0 -1.2 -2.5" 
-                  scale="1.5 1.5 1.5"
-                  gltf-model="url(https://raw.githack.com/KhronosGroup/glTF-Sample-Models/master/2.0/RiggedFigure/glTF/RiggedFigure.gltf)"
-                  animation-mixer>
-            <a-text value="DJ ALOK (YOU)" align="center" position="0 2.2 0" color="#ffcc00"></a-text>
+        <a-entity light="type: ambient; intensity: 1.5;"></a-entity>
+
+        <a-entity id="planeWrap" position="-20 50 -10">
+            <a-box id="plane" width="5" height="2" depth="10" color="gray">
+                <a-text value="PLANE" align="center" position="0 2 0" color="yellow"></a-text>
+            </a-box>
+            <a-entity id="rig" position="0 0 0">
+                <a-camera id="cam"></a-camera>
+                <a-entity gltf-model="#playerModel" position="0 -1.5 -2" scale="1 1 1" id="playerInPlane"></a-entity>
+            </a-entity>
         </a-entity>
 
-        <a-entity camera></a-entity>
+        <a-entity id="mapItems" visible="true">
+            <a-box position="0 -1 -30" width="10" height="15" color="white" src="https://i.imgur.com/your-taj-texture.jpg"></a-box>
+            
+            <a-box position="5 -1 -15" scale="0.5 0.5 0.5" color="gold">
+                <a-text value="GUN (AK47)" align="center" position="0 1 0" width="5"></a-text>
+            </a-box>
+            <a-box position="-5 -1 -20" scale="0.5 0.5 0.5" color="green">
+                <a-text value="MEDKIT" align="center" position="0 1 0" width="5"></a-text>
+            </a-box>
+
+            <a-entity gltf-model="#monster" position="10 -1 -25" scale="1.5 1.5 1.5" animation-mixer></a-entity>
+        </a-entity>
+
     </a-scene>
 
     <script>
+        let planeInterval;
+        let planeX = -20;
+
+        function startPlane() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('ejectBtn').style.display = 'block';
+            
+            // প্লেন ম্যাপের এমাথা থেকে ওমাথা যাবে
+            planeInterval = setInterval(() => {
+                planeX += 0.1;
+                document.getElementById('planeWrap').setAttribute('position', `${planeX} 50 -10`);
+                if (planeX > 20) {
+                    eject(); // নিজে থেকে নামিয়ে দেওয়া যদি ইজেক্ট না করে
+                }
+            }, 20);
+        }
+
+        function eject() {
+            clearInterval(planeInterval);
+            document.getElementById('ejectBtn').style.display = 'none';
+            
+            let currentRig = document.getElementById('rig');
+            let h = 50;
+            
+            // প্যারাসুট নামার অ্যানিমেশন
+            const fall = setInterval(() => {
+                h -= 0.15;
+                currentRig.setAttribute('position', `0 ${h - 50} 0`); // প্লেনের সাপেক্ষে ক্যালকুলেশন
+                if (h <= 0) {
+                    clearInterval(fall);
+                    alert("Landed! Loot the weapons!");
+                }
+            }, 20);
+        }
+
         function invite() {
             const url = window.location.href;
-            if (navigator.share) {
-                navigator.share({ title: 'Join my Lobby', url: url });
-            } else {
-                alert("Link: " + url);
-            }
+            navigator.share ? navigator.share({title: 'Join FF AR', url: url}) : alert("Link: " + url);
         }
     </script>
 </body>
